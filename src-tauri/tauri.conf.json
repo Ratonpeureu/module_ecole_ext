@@ -19,7 +19,9 @@
         "minHeight": 768,
         "resizable": true,
         "fullscreen": false,
-        "devtools": true
+        "devtools": true,
+        "backgroundColor": "#edf1f7",
+        "decorations": false 
       }
     ],
     "security": {
