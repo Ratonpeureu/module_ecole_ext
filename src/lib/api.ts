@@ -28,11 +28,13 @@ function isAuthWhitelisted(url: string) {
 }
 
 // ✅ Vérifier qu'on n'est PAS déjà sur /login avant de rediriger
+
 function triggerTokenExpired() {
     if (_redirecting) return;
 
-    // Si on est déjà sur login, ne rien faire
-    if (window.location.pathname.startsWith("/login")) return;
+    // ✅ Utilisation de window.location.hash pour HashRouter
+    const hash = window.location.hash;
+    if (hash.startsWith("#/login")) return;
 
     _redirecting = true;
 
@@ -46,17 +48,15 @@ function triggerTokenExpired() {
         }),
     );
 
-    const currentPath = window.location.pathname + window.location.search;
-    const cleanPath = currentPath.replace(/^\/ecole/, '') || '/';
-    window.location.replace(
-    `/ecole/login?_redirect=${encodeURIComponent(cleanPath)}&reason=expired`,
-    );
+    // ✅ On remplace par une redirection via le Hash (pas de rechargement de page)
+    window.location.hash = '#/login?reason=expired';
 
-    // Reset après navigation (pour les SPAs qui ne rechargent pas)
+    // Reset après navigation
     setTimeout(() => {
         _redirecting = false;
     }, 3000);
 }
+
 
 // ── GESTION DE LA PHRASE SECRÈTE (conservé pour d'autres routes si besoin) ──
 let _secretPhrase: string | null = null;
