@@ -60,12 +60,10 @@ import { Patrimoine } from './pages/services/Patrimoine';
 import { Transport } from './pages/services/Transport';
 import { VieScolaire } from './pages/services/VieScolaire';
 
-// Composant qui gère la logique du Splash Screen (Écran de démarrage)
+// Composant qui gère la logique du Splash Screen
 function AppBootstrap({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuth();
   const { loading: aboLoading } = useAbonnement();
-  
-  // On garde le splash screen affiché pendant 2 secondes MINIMUM
   const [minTimeElapsed, setMinTimeElapsed] = React.useState(false);
 
   React.useEffect(() => {
@@ -73,7 +71,6 @@ function AppBootstrap({ children }: { children: React.ReactNode }) {
     return () => clearTimeout(timer);
   }, []);
 
-  // On attend que le temps minimum soit écoulé ET que les données soient chargées
   const isLoading = !minTimeElapsed || (isAuthenticated && aboLoading);
 
   return (
@@ -96,81 +93,62 @@ export default function App() {
         <AbonnementProvider>
           <Toaster position="top-right" />
           
-          {/* La barre de titre personnalisée (style Windows 11) */}
+          {/* Barre de titre personnalisée */}
           <TitleBar />
 
-          {/* 
-            pt-9 permet de laisser l'espace de 36px (h-9) pour la barre de titre.
-            h-screen et overflow-hidden empêchent le défilement de toute la page.
-          */}
+          {/* Conteneur principal : pt-9 pour la TitleBar, h-screen pour bloquer le scroll global */}
           <div className="h-screen overflow-hidden bg-[#edf1f7] pt-9">
-            
-            {/* Zone défilante qui prend la hauteur restante */}
-            <div className="h-[calc(100vh-36px)] overflow-y-auto">
-              <AppBootstrap>
-                <TrialBanner />
-                
-                <Routes>
-                  {/* ── Routes publiques ───────────────────────────── */}
-                  <Route path="/login" element={<LoginPage />} />
-                  <Route path="/signup" element={<RegisterPage />} />
+            <AppBootstrap>
+              <TrialBanner />
+              
+              <Routes>
+                <Route path="/login" element={<LoginPage />} />
+                <Route path="/signup" element={<RegisterPage />} />
 
-                  {/* ── Zone Sécurisée (Connexion OBLIGATOIRE) ── */}
-                  <Route element={<RequireAuth />}>
-                    
-                    {/* ── Zone protégée (AbonnementGuard → EcoleLayout) ── */}
-                    <Route path="/" element={<AbonnementGuard />}>
-                      <Route element={<EcoleLayout />}>
+                <Route element={<RequireAuth />}>
+                  <Route path="/" element={<AbonnementGuard />}>
+                    <Route element={<EcoleLayout />}>
+                      <Route index element={<EcoleDashboard />} />
+                      <Route path="dashboard" element={<AbonnementDashboardPage />} />
+                      <Route path="profil" element={<ProfilPage />} />
 
-                        {/* Dashboard école */}
-                        <Route index element={<EcoleDashboard />} />
-
-                        {/* Dashboard abonnement & Profil */}
-                        <Route path="dashboard" element={<AbonnementDashboardPage />} />
-                        <Route path="profil" element={<ProfilPage />} />
-
-                        {/* Abonnement — accessible même si bloqué */}
-                        <Route path="abonnement">
-                          <Route index element={<AbonnementPage />} />
-                          <Route path="upgrade" element={<AbonnementUpgradePage />} />
-                          <Route path="virement" element={<AbonnementVirementPage />} />
-                          <Route path="paypal/succes" element={<PaypalSuccessPage />} />
-                          <Route path="paypal/annule" element={<PaypalCancelPage />} />
-                          <Route path="expire" element={<AbonnementExpirePage />} />
-                        </Route>
-
-                        {/* ── Module école ─────────────────────────── */}
-                        <Route path="eleves" element={<Eleves />} />
-                        <Route path="classes" element={<Classes />} />
-                        <Route path="enseignants" element={<Enseignants />} />
-                        <Route path="parents" element={<Parents />} />
-                        <Route path="emploi-du-temps" element={<EmploiDuTemps />} />
-                        <Route path="notes" element={<Notes />} />
-                        <Route path="bulletins" element={<Bulletins />} />
-                        <Route path="presences" element={<Presences />} />
-                        <Route path="devoirs" element={<Devoirs />} />
-                        <Route path="finance" element={<Finance />} />
-                        <Route path="admissions" element={<Admissions />} />
-                        <Route path="vie-scolaire" element={<VieScolaire />} />
-                        <Route path="infirmerie" element={<Infirmerie />} />
-                        <Route path="discipline" element={<Discipline />} />
-                        <Route path="bibliotheque" element={<Bibliotheque />} />
-                        <Route path="transport" element={<Transport />} />
-                        <Route path="patrimoine" element={<Patrimoine />} />
-                        <Route path="cartes" element={<Cartes />} />
-                        <Route path="analyses" element={<Analyses />} />
-                        <Route path="parametres" element={<Parametres />} />
-                        <Route path="registres" element={<Registres />} />
-
+                      <Route path="abonnement">
+                        <Route index element={<AbonnementPage />} />
+                        <Route path="upgrade" element={<AbonnementUpgradePage />} />
+                        <Route path="virement" element={<AbonnementVirementPage />} />
+                        <Route path="paypal/succes" element={<PaypalSuccessPage />} />
+                        <Route path="paypal/annule" element={<PaypalCancelPage />} />
+                        <Route path="expire" element={<AbonnementExpirePage />} />
                       </Route>
+
+                      <Route path="eleves" element={<Eleves />} />
+                      <Route path="classes" element={<Classes />} />
+                      <Route path="enseignants" element={<Enseignants />} />
+                      <Route path="parents" element={<Parents />} />
+                      <Route path="emploi-du-temps" element={<EmploiDuTemps />} />
+                      <Route path="notes" element={<Notes />} />
+                      <Route path="bulletins" element={<Bulletins />} />
+                      <Route path="presences" element={<Presences />} />
+                      <Route path="devoirs" element={<Devoirs />} />
+                      <Route path="finance" element={<Finance />} />
+                      <Route path="admissions" element={<Admissions />} />
+                      <Route path="vie-scolaire" element={<VieScolaire />} />
+                      <Route path="infirmerie" element={<Infirmerie />} />
+                      <Route path="discipline" element={<Discipline />} />
+                      <Route path="bibliotheque" element={<Bibliotheque />} />
+                      <Route path="transport" element={<Transport />} />
+                      <Route path="patrimoine" element={<Patrimoine />} />
+                      <Route path="cartes" element={<Cartes />} />
+                      <Route path="analyses" element={<Analyses />} />
+                      <Route path="parametres" element={<Parametres />} />
+                      <Route path="registres" element={<Registres />} />
                     </Route>
                   </Route>
+                </Route>
 
-                  {/* ── Fallback ───────────────────────────────────── */}
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-              </AppBootstrap>
-            </div>
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </AppBootstrap>
           </div>
 
         </AbonnementProvider>

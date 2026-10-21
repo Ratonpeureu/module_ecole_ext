@@ -1,6 +1,11 @@
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
   tauri::Builder::default()
+    // 👇 AJOUTE CES 3 LIGNES ICI
+    .plugin(tauri_plugin_dialog::init())
+    .plugin(tauri_plugin_fs::init())
+    .plugin(tauri_plugin_opener::init())
+    // 👇 Ton code existant reste intact
     .setup(|app| {
       if cfg!(debug_assertions) {
         app.handle().plugin(

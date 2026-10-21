@@ -1,8 +1,9 @@
-import React from "react";
+import React, { useState } from "react";
 import { motion } from "framer-motion";
 import type { Column, Row } from "../../types/ui";
 import { humanize, isHiddenKey } from "../../utils/format";
 import { CellValue } from "./CellValue";
+import { ContextMenu, ContextMenuItem } from "../ui/ContextMenu";
 
 interface DataTableProps {
   rows: Row[];
@@ -11,6 +12,7 @@ interface DataTableProps {
   selectedKey?: string | null;
   rowKey?: (row: Row, index: number) => string;
   rowActions?: (row: Row) => React.ReactNode;
+  rowContextMenu?: (row: Row) => ContextMenuItem[];
   compact?: boolean;
 }
 
@@ -26,15 +28,16 @@ function autoColumns(rows: Row[]): Column[] {
     .map((key) => ({ key }));
 }
 
-export function DataTable({ rows, columns, onRowClick, selectedKey, rowKey, rowActions, compact }: DataTableProps) {
+export function DataTable({ rows, columns, onRowClick, selectedKey, rowKey, rowActions, rowContextMenu, compact }: DataTableProps) {
   const cols = columns ?? autoColumns(rows);
   const keyOf = (r: Row, i: number) => (rowKey ? rowKey(r, i) : String(r.id ?? i));
+  const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number; row: Row } | null>(null);
 
   const cellPad = compact ? "px-3 py-2" : "px-4 py-3";
   const headPad = compact ? "px-3 py-2" : "px-4 py-2.5";
 
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col relative">
       <div className="ecole_m-scroll overflow-x-auto">
         <table className="w-full border-separate border-spacing-0 text-left">
           <thead>
@@ -69,15 +72,14 @@ export function DataTable({ rows, columns, onRowClick, selectedKey, rowKey, rowA
                   transition={{ duration: 0.2, delay: Math.min(i, 8) * 0.03, ease: [0.23, 1, 0.32, 1] }}
                   data-clickable={clickable}
                   data-selected={selected}
-                  aria-selected={clickable ? selected : undefined}
-                  tabIndex={clickable ? 0 : undefined}
                   onClick={clickable ? () => onRowClick!(r) : undefined}
-                  onKeyDown={(e) => {
-                    if (onRowClick && e.key === "Enter") onRowClick(r);
+                  onContextMenu={(e) => {
+                    if (!rowContextMenu) return;
+                    e.preventDefault();
+                    setCtxMenu({ x: e.clientX, y: e.clientY, row: r });
                   }}
                   className={[
                     "group outline-none transition-[background-color] duration-150",
-                    "focus-visible:bg-[var(--em-accent,#0067C0)]/[0.06]",
                     clickable ? "cursor-pointer" : "",
                     selected
                       ? "bg-[var(--em-accent,#0067C0)]/[0.08]"
@@ -118,13 +120,13 @@ export function DataTable({ rows, columns, onRowClick, selectedKey, rowKey, rowA
         </table>
       </div>
 
-      {!compact && rows.length > 0 && (
-        <div className="flex items-center justify-between border-t border-black/[0.06] bg-[#F9F9F9]/60 px-4 py-2 text-[12px] text-[#5D5D5D]">
-          <span>
-            <span className="font-semibold tabular-nums text-[#1A1A1A]">{rows.length}</span> élément(s)
-          </span>
-          {onRowClick && <span className="hidden sm:inline">Cliquez sur une ligne pour voir le détail</span>}
-        </div>
+      {ctxMenu && (
+        <ContextMenu
+          x={ctxMenu.x}
+          y={ctxMenu.y}
+          items={rowContextMenu ? rowContextMenu(ctxMenu.row) : []}
+          onClose={() => setCtxMenu(null)}
+        />
       )}
     </div>
   );

@@ -13,30 +13,28 @@ interface PageHeaderProps {
 export function PageHeader({ icon: Icon, color, title, subtitle, actions }: PageHeaderProps) {
   return (
     <motion.header
-      initial={{ opacity: 0, y: 8 }}
+      initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.26, ease: [0.23, 1, 0.32, 1] }}
-      className="relative overflow-hidden rounded-[12px] border border-black/[0.06] bg-white/75 shadow-[0_1px_2px_rgba(0,0,0,0.04),0_4px_16px_rgba(0,0,0,0.03)] backdrop-blur-xl">
-      <span className="pointer-events-none absolute inset-0" style={{ background: `${color}0D` }} aria-hidden="true" />
-      <span className="absolute inset-y-4 left-0 w-[3px] rounded-r-full" style={{ background: color }} aria-hidden="true" />
-
-      <div className="relative flex flex-wrap items-center gap-4 px-5 py-5 sm:px-6">
-        <motion.span
-          initial={{ scale: 0.9, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ duration: 0.24, delay: 0.04, ease: [0.23, 1, 0.32, 1] }}
-          className="grid h-12 w-12 shrink-0 place-items-center rounded-[12px] text-white"
-          style={{ background: color, boxShadow: `inset 0 1px 0 rgba(255,255,255,0.22), 0 6px 16px ${color}40` }}>
-          <Icon className="h-6 w-6" strokeWidth={2.1} aria-hidden="true" />
-        </motion.span>
-
-        <div className="min-w-0 flex-1">
-          <h1 className="ecole_m-display text-[26px] font-semibold leading-tight tracking-[-0.015em] text-[#1A1A1A] sm:text-[28px]">{title}</h1>
-          {subtitle && <p className="mt-1 text-[14px] text-[#5D5D5D]">{subtitle}</p>}
+      transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
+      // Barre d'outils compacte, fixe en haut du contenu
+      className="mb-5 flex flex-wrap items-center justify-between gap-3 border-b border-[var(--em-border)] pb-4"
+    >
+      <div className="flex items-center gap-3 min-w-0">
+        <span
+          className="grid h-8 w-8 shrink-0 place-items-center rounded-lg text-white shadow-sm"
+          style={{ background: color }}
+        >
+          <Icon className="h-4 w-4" strokeWidth={2.2} aria-hidden="true" />
+        </span>
+        <div className="min-w-0">
+          <h1 className="ecole_m-display text-[18px] font-bold tracking-tight text-[#1A1A1A] leading-tight truncate">
+            {title}
+          </h1>
+          {subtitle && <p className="text-[12px] text-[#5D5D5D] truncate">{subtitle}</p>}
         </div>
-
-        {actions && <div className="flex w-full flex-wrap gap-2 sm:w-auto">{actions}</div>}
       </div>
+
+      {actions && <div className="flex flex-wrap gap-2 shrink-0">{actions}</div>}
     </motion.header>
   );
 }

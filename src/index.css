@@ -441,3 +441,68 @@ input[type="file"].ecole_m-input::file-selector-button {
     animation-duration: 0.01ms !important;
   }
 }
+
+
+
+
+
+
+/* ═══════════════════════════════════════════════════════════════════
+   FEEL DESKTOP — Densité visuelle et comportement natif
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* Empêche la sélection de texte accidentelle sur l'UI (boutons, barres) */
+.ecole_m button, 
+.ecole_m nav, 
+.ecole_m header,
+.ecole_m .ecole_m-taskbar {
+  user-select: none;
+}
+
+/* Scrollbar ultra-fine style Windows 11 / macOS */
+.ecole_m-scroll::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+.ecole_m-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.ecole_m-scroll::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 10px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+.ecole_m-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.3);
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+/* Densification des tableaux */
+.ecole_m-table td {
+  padding: 6px 12px; /* Réduit de 10px à 6px */
+  font-size: 13px;
+}
+.ecole_m-table th {
+  padding: 8px 12px;
+  font-size: 11.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Cartes plus denses */
+.ecole_m-card {
+  border-radius: 8px; /* Coins moins arrondis que le web */
+  box-shadow: 0 1px 2px rgba(0,0,0,0.04); /* Ombre très discrète */
+}
+
+/* Modales plein écran ou très grandes (style app desktop) */
+.ecole_m-modal {
+  max-height: 95vh;
+}
+
+
+
+
+
