@@ -1,0 +1,514 @@
+================================================================================
+# FICHIER     : Admissions.tsx
+# CHEMIN ABS  : /home/anakim/site_iptv/front/src/module_ecole/src/pages/personnes/Admissions.tsx
+================================================================================
+
+import React, { useState } from "react";
+import { useSearchParams } from "react-router-dom";
+import { ClipboardCheckIcon, GaugeIcon, InboxIcon, UserCheckIcon, UserPlusIcon } from "lucide-react";
+import { convertirCandidature, creerCandidature, getCandidature, listerCandidatures, statuerCandidature } from "../../lib/api_ecole";
+import { ModuleHero } from "../../components/layout/ModuleHero";
+import { ResourceView } from "../../components/layout/ResourceView";
+import { WithAnnee } from "../../components/layout/WithAnnee";
+import { PivotTabs } from "../../components/ui/PivotTabs";
+import { TabTransition } from "../../components/ui/TabTransition";
+import { LoadPicker } from "../../components/ui/LoadPicker";
+import { AsyncBlock } from "../../components/data/AsyncBlock";
+import { ObjectView } from "../../components/data/ObjectView";
+import { FormAction } from "../../components/form/FormAction";
+import { RemplissageList } from "../../components/dashboard/RemplissageList";
+import { candidatureFields, convertirFields, statuerFields } from "../../data/fields/personnel";
+import { STATUT_CANDIDATURE } from "../../data/enums";
+import { fromEnum } from "../../utils/options";
+import { initials, str } from "../../utils/format";
+
+const COLOR = "#DA3B01";
+
+const nom = (r: Record<string, unknown>) => `${str(r.prenom_candidat)} ${str(r.nom_candidat)}`.trim();
+
+export function Admissions() {
+  const [params, setParams] = useSearchParams();
+  const tab = params.get("tab") ?? "candidatures";
+  const [statut, setStatut] = useState("");
+
+  return (
+    <div className="space-y-6">
+      <ModuleHero icon={UserPlusIcon} color={COLOR} title="Admissions" subtitle="Candidatures et places disponibles" />
+
+      <PivotTabs
+        layoutKey="admissions"
+        label="Rubriques des admissions"
+        tabs={[
+        { id: "candidatures", label: "Candidatures", icon: InboxIcon },
+        { id: "places", label: "Places disponibles", icon: GaugeIcon }]
+        }
+        value={tab}
+        onChange={(t) => setParams({ tab: t })} />
+
+      <WithAnnee>
+        {(anneeId) =>
+        <TabTransition id={tab}>
+            {tab === "candidatures" ?
+          <ResourceView
+            load={() => listerCandidatures(statut || undefined)}
+            deps={[statut]}
+            columns={[
+            {
+              key: "nom_candidat",
+              label: "Candidat",
+              render: (r) =>
+              <span className="flex items-center gap-3">
+                      <span
+                  className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-[12px] font-semibold"
+                  style={{ background: `color-mix(in srgb, ${COLOR} 14%, transparent)`, color: COLOR }}>
+                        {initials(nom(r))}
+                      </span>
+                      <span className="font-medium">{nom(r)}</span>
+                    </span>
+            },
+            { key: "date_naissance" },
+            { key: "nom_parent", label: "Parent" },
+            { key: "telephone_parent", label: "Téléphone" },
+            { key: "statut" }]
+            }
+            toolbar={<LoadPicker label="Statut" value={statut} onChange={setStatut} options={fromEnum(STATUT_CANDIDATURE)} placeholder="Tous" clearable />}
+            actions={(reload) =>
+            <FormAction label="Nouvelle candidature" icon={UserPlusIcon} variant="primary" fields={candidatureFields(anneeId)} modalSize="lg" onSubmit={creerCandidature} successMessage="Candidature enregistrée" onDone={reload} />
+            }
+            emptyTitle="Aucune candidature"
+            detailTitle={nom}
+            renderDetail={(r, ctx) =>
+            <div className="space-y-5">
+                    <div className="flex flex-wrap items-center gap-2 rounded-lg border border-[var(--em-border)] bg-[color-mix(in_srgb,var(--em-accent)_4%,transparent)] p-3">
+                      <FormAction label="Changer le statut" icon={ClipboardCheckIcon} size="sm" fields={statuerFields} onSubmit={(b) => statuerCandidature(str(r.id), b)} successMessage="Statut mis à jour" onDone={ctx.reload} />
+                      <FormAction
+                  label="Inscrire comme élève"
+                  icon={UserCheckIcon}
+                  size="sm"
+                  variant="primary"
+                  fields={convertirFields(anneeId)}
+                  onSubmit={(b) => convertirCandidature(str(r.id), b)}
+                  successMessage="Élève inscrit"
+                  showResult
+                  onDone={ctx.reload} />
+                    </div>
+                    <AsyncBlock load={() => getCandidature(str(r.id))} deps={[str(r.id)]}>
+                      {(d) => <ObjectView data={d} />}
+                    </AsyncBlock>
+                  </div>
+            } /> :
+
+          <section className="ecole_m-card p-5 md:p-6" aria-labelledby="places-title">
+                <div className="mb-5 flex items-center gap-3">
+                  <span
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg"
+                style={{ background: `color-mix(in srgb, ${COLOR} 14%, transparent)`, color: COLOR }}>
+                    <GaugeIcon className="h-[18px] w-[18px]" aria-hidden="true" />
+                  </span>
+                  <div>
+                    <h2 id="places-title" className="text-[15px] font-semibold leading-tight">Places disponibles</h2>
+                    <p className="ecole_m-muted text-[13px]">Effectifs inscrits par rapport à la capacité de chaque classe</p>
+                  </div>
+                </div>
+                <RemplissageList anneeId={anneeId} />
+              </section>
+          }
+          </TabTransition>
+        }
+      </WithAnnee>
+    </div>);
+}
+
+================================================================================
+# FICHIER     : Eleves.tsx
+# CHEMIN ABS  : /home/anakim/site_iptv/front/src/module_ecole/src/pages/personnes/Eleves.tsx
+================================================================================
+
+import React, { useState } from "react";
+import { useSearchParams } from "react-router-dom";
+import { GraduationCapIcon, UserPlusIcon, UsersIcon, UserXIcon } from "lucide-react";
+import { creerEleve, listerEleves, listerElevesSansClasse } from "../../lib/api_ecole";
+import { useDebounced } from "../../hooks/useAsync";
+import { ModuleHero } from "../../components/layout/ModuleHero";
+import { ResourceView } from "../../components/layout/ResourceView";
+import { WithAnnee } from "../../components/layout/WithAnnee";
+import { PivotTabs } from "../../components/ui/PivotTabs";
+import { TabTransition } from "../../components/ui/TabTransition";
+import { SearchInput } from "../../components/ui/SearchInput";
+import { LoadPicker } from "../../components/ui/LoadPicker";
+import { FormAction } from "../../components/form/FormAction";
+import { EleveDetail } from "../../components/eleves/EleveDetail";
+import { InscriptionResult } from "../../components/eleves/InscriptionResult";
+import { eleveCreateFields } from "../../data/fields/eleves";
+import { STATUT_ELEVE } from "../../data/enums";
+import type { Column } from "../../types/ui";
+import { fromEnum } from "../../utils/options";
+import { fullName, initials, str } from "../../utils/format";
+
+const COLOR = "#0F7B6C";
+
+const nameColumn: Column = {
+  key: "nom",
+  label: "Élève",
+  render: (r) =>
+  <span className="flex items-center gap-3">
+      <span
+      className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-[12px] font-semibold"
+      style={{ background: `color-mix(in srgb, ${COLOR} 14%, transparent)`, color: COLOR }}>
+        {initials(fullName(r))}
+      </span>
+      <span className="min-w-0">
+        <span className="block truncate font-medium">{fullName(r)}</span>
+        {str(r.matricule) ? <span className="ecole_m-muted block truncate text-[12px]">{str(r.matricule)}</span> : null}
+      </span>
+    </span>
+};
+
+export function Eleves() {
+  const [params, setParams] = useSearchParams();
+  const tab = params.get("tab") ?? "tous";
+  const [q, setQ] = useState("");
+  const [statut, setStatut] = useState("");
+  const dq = useDebounced(q);
+
+  return (
+    <div className="space-y-6">
+      <ModuleHero icon={GraduationCapIcon} color={COLOR} title="Élèves" subtitle="Dossiers, inscriptions, scolarité et suivi" />
+
+      <PivotTabs
+        layoutKey="eleves"
+        label="Rubriques des élèves"
+        tabs={[
+        { id: "tous", label: "Tous les élèves", icon: UsersIcon },
+        { id: "sans-classe", label: "Sans classe", icon: UserXIcon }]
+        }
+        value={tab}
+        onChange={(t) => setParams({ tab: t })} />
+
+      <WithAnnee>
+        {(anneeId) =>
+        <TabTransition id={tab}>
+            {tab === "tous" ?
+          <ResourceView
+            load={() => listerEleves({ q: dq || undefined, statut: statut || undefined })}
+            deps={[dq, statut]}
+            columns={[{ key: "matricule" }, nameColumn, { key: "sexe" }, { key: "date_naissance" }, { key: "statut" }]}
+            toolbar={
+            <>
+                    <SearchInput value={q} onChange={setQ} placeholder="Nom, prénom ou matricule" />
+                    <LoadPicker label="Statut" value={statut} onChange={setStatut} options={fromEnum(STATUT_ELEVE)} placeholder="Tous" clearable width="sm:w-52" />
+                  </>
+            }
+            actions={(reload) =>
+            <FormAction
+              label="Nouvel élève"
+              icon={UserPlusIcon}
+              variant="primary"
+              description="L'élève est créé et inscrit directement dans sa classe."
+              fields={eleveCreateFields(anneeId)}
+              modalSize="lg"
+              onSubmit={creerEleve}
+              successMessage="Élève inscrit"
+              showResult
+              renderResult={(r) => <InscriptionResult result={r} anneeId={anneeId} />}
+              onDone={reload} />
+            }
+            emptyTitle="Aucun élève trouvé"
+            emptyIcon={GraduationCapIcon}
+            wide
+            detailTitle={fullName}
+            detailSubtitle={(r) => `Matricule ${str(r.matricule)}`}
+            renderDetail={(r, ctx) => <EleveDetail eleve={r} anneeId={anneeId} onChanged={ctx.reload} />} /> :
+
+          <ResourceView
+            load={listerElevesSansClasse}
+            deps={[]}
+            columns={[{ key: "matricule" }, nameColumn, { key: "statut" }]}
+            emptyTitle="Tous les élèves ont une classe"
+            wide
+            detailTitle={fullName}
+            detailSubtitle={(r) => `Matricule ${str(r.matricule)}`}
+            renderDetail={(r, ctx) => <EleveDetail eleve={r} anneeId={anneeId} onChanged={ctx.reload} />} />
+          }
+          </TabTransition>
+        }
+      </WithAnnee>
+    </div>);
+}
+
+================================================================================
+# FICHIER     : Enseignants.tsx
+# CHEMIN ABS  : /home/anakim/site_iptv/front/src/module_ecole/src/pages/personnes/Enseignants.tsx
+================================================================================
+
+import React, { useState } from "react";
+import { useSearchParams } from "react-router-dom";
+import { BookOpenIcon, PresentationIcon, UserPlusIcon, UsersIcon, UserCheckIcon } from "lucide-react";
+import { creerEnseignant, listerClassesTitulaires, listerEnseignants, listerEnseignantsParMatiere } from "../../lib/api_ecole";
+import { useDebounced } from "../../hooks/useAsync";
+import { ModuleHero } from "../../components/layout/ModuleHero";
+import { ResourceView } from "../../components/layout/ResourceView";
+import { WithAnnee } from "../../components/layout/WithAnnee";
+import { PivotTabs } from "../../components/ui/PivotTabs";
+import { TabTransition } from "../../components/ui/TabTransition";
+import { SearchInput } from "../../components/ui/SearchInput";
+import { LoadPicker } from "../../components/ui/LoadPicker";
+import { FormAction } from "../../components/form/FormAction";
+import { EnseignantDetail } from "../../components/enseignants/EnseignantDetail";
+import { enseignantCreateFields } from "../../data/fields/personnel";
+import { AFFICHAGE_ACTIF } from "../../data/enums";
+import { fromEnum } from "../../utils/options";
+import { fullName, initials, str } from "../../utils/format";
+
+const COLOR = "#8764B8";
+
+export function Enseignants() {
+  const [params, setParams] = useSearchParams();
+  const tab = params.get("tab") ?? "equipe";
+  const [q, setQ] = useState("");
+  const [actif, setActif] = useState("true");
+  const dq = useDebounced(q);
+
+  return (
+    <div className="space-y-6">
+      <ModuleHero icon={PresentationIcon} color={COLOR} title="Enseignants" subtitle="Équipe pédagogique, affectations et charge horaire" />
+
+      <PivotTabs
+        layoutKey="enseignants"
+        label="Rubriques des enseignants"
+        tabs={[
+        { id: "equipe", label: "Équipe", icon: UsersIcon },
+        { id: "matieres", label: "Par matière", icon: BookOpenIcon },
+        { id: "titulaires", label: "Titulaires de classe", icon: UserCheckIcon }]
+        }
+        value={tab}
+        onChange={(t) => setParams({ tab: t })} />
+
+      <WithAnnee>
+        {(anneeId) =>
+        <TabTransition id={tab}>
+            {tab === "equipe" &&
+          <ResourceView
+            load={() => listerEnseignants({ q: dq || undefined, actif_seulement: actif === "true" })}
+            deps={[dq, actif]}
+            columns={[
+            {
+              key: "nom",
+              label: "Enseignant",
+              render: (r) =>
+              <span className="flex items-center gap-3">
+                      <span
+                  className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-[12px] font-semibold"
+                  style={{ background: `color-mix(in srgb, ${COLOR} 14%, transparent)`, color: COLOR }}>
+                        {initials(fullName(r))}
+                      </span>
+                      <span className="font-medium">{fullName(r)}</span>
+                    </span>
+            },
+            { key: "specialite_principale", label: "Spécialité" },
+            { key: "telephone" },
+            { key: "nb_affectations_actives", label: "Matières confiées" },
+            {
+              key: "actif",
+              render: (r) =>
+              Number(r.actif) === 1 ?
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--em-accent-soft)] px-2.5 py-0.5 text-[12px] font-medium text-[var(--em-accent)]">
+                        <span className="h-1.5 w-1.5 rounded-full bg-[var(--em-accent)]" aria-hidden="true" />
+                        Actif
+                      </span> :
+              <span className="ecole_m-muted inline-flex items-center gap-1.5 rounded-full border border-[var(--em-border)] px-2.5 py-0.5 text-[12px] font-medium">
+                        <span className="h-1.5 w-1.5 rounded-full bg-current opacity-60" aria-hidden="true" />
+                        Inactif
+                      </span>
+            }]
+            }
+            toolbar={
+            <>
+                    <SearchInput value={q} onChange={setQ} placeholder="Nom ou spécialité" />
+                    <LoadPicker label="Affichage" value={actif} onChange={setActif} options={fromEnum(AFFICHAGE_ACTIF)} width="sm:w-48" searchable={false} />
+                  </>
+            }
+            actions={(reload) =>
+            <FormAction
+              label="Nouvel enseignant"
+              icon={UserPlusIcon}
+              variant="primary"
+              fields={enseignantCreateFields(anneeId)}
+              modalSize="xl"
+              onSubmit={creerEnseignant}
+              successMessage="Enseignant créé"
+              showResult
+              onDone={reload} />
+            }
+            emptyTitle="Aucun enseignant"
+            emptyIcon={PresentationIcon}
+            wide
+            detailTitle={fullName}
+            detailSubtitle={(r) => str(r.poste)}
+            renderDetail={(r, ctx) => <EnseignantDetail enseignant={r} anneeId={anneeId} onChanged={ctx.reload} />} />
+          }
+
+            {tab === "matieres" &&
+          <ResourceView load={() => listerEnseignantsParMatiere(anneeId)} deps={[anneeId]} emptyTitle="Aucune matière attribuée" detailTitle={(r) => str(r.libelle || r.matiere)} />
+          }
+
+            {tab === "titulaires" &&
+          <ResourceView load={() => listerClassesTitulaires(anneeId)} deps={[anneeId]} emptyTitle="Aucune classe avec titulaire" detailTitle={(r) => str(r.libelle || r.classe_libelle)} />
+          }
+          </TabTransition>
+        }
+      </WithAnnee>
+    </div>);
+}
+
+================================================================================
+# FICHIER     : Parents.tsx
+# CHEMIN ABS  : /home/anakim/site_iptv/front/src/module_ecole/src/pages/personnes/Parents.tsx
+================================================================================
+
+import React, { useState } from "react";
+import { KeyRoundIcon, LinkIcon, MailPlusIcon, TicketIcon, UserPlusIcon, UsersIcon } from "lucide-react";
+import {
+  creerCompteParent,
+  genererCodeActivationParent,
+  genererCodeEnveloppeParent,
+  getCodeEnveloppeParent,
+  getParent,
+  lierEnfantParent,
+  lierParentEleve,
+  listerCodesEnveloppeParent,
+  listerEnfantsParent,
+  listerParents } from
+"../../lib/api_ecole";
+import { useDebounced, useTick } from "../../hooks/useAsync";
+import { ModuleHero } from "../../components/layout/ModuleHero";
+import { ResourceView } from "../../components/layout/ResourceView";
+import { Section } from "../../components/layout/Section";
+import { SearchInput } from "../../components/ui/SearchInput";
+import { AsyncBlock } from "../../components/data/AsyncBlock";
+import { MiniTable } from "../../components/data/MiniTable";
+import { ObjectView } from "../../components/data/ObjectView";
+import { EmptyState } from "../../components/data/States";
+import { FormAction } from "../../components/form/FormAction";
+import { codeActivationFields, lierEnfantFields, parentCreateFields, relationFields } from "../../data/fields/personnel";
+import { F } from "../../utils/fieldBuilders";
+import { fullName, initials, str } from "../../utils/format";
+
+const COLOR = "#C239B3";
+
+function ParentDetail({ parentId }: {parentId: string;}) {
+  const [tick, bump] = useTick();
+
+  return (
+    <div className="space-y-6">
+      <div className="rounded-lg border border-[var(--em-border)] p-4">
+        <AsyncBlock load={() => getParent(parentId)} deps={[parentId]}>
+          {(p) => <ObjectView data={p} hide={["nom", "prenom"]} />}
+        </AsyncBlock>
+      </div>
+
+      <Section
+        title="Enfants"
+        actions={
+        <>
+            <FormAction label="Rattacher par code" icon={KeyRoundIcon} size="sm" fields={lierEnfantFields} onSubmit={(b) => lierEnfantParent(parentId, b)} successMessage="Enfant rattaché" showResult onDone={bump} />
+            <FormAction label="Rattacher un élève" icon={LinkIcon} size="sm" fields={relationFields} onSubmit={(b) => lierParentEleve(parentId, b)} successMessage="Élève rattaché" onDone={bump} />
+          </>
+        }>
+        <AsyncBlock load={() => listerEnfantsParent(parentId)} deps={[parentId, tick]} empty={<EmptyState compact title="Aucun enfant rattaché" />}>
+          {(rows) =>
+          <div className="overflow-hidden rounded-lg border border-[var(--em-border)]">
+              <MiniTable rows={rows} rowKey={(r, i) => str(r.eleve_id) || String(i)} />
+            </div>
+          }
+        </AsyncBlock>
+      </Section>
+
+      <Section
+        title="Code d'activation du compte"
+        description="Code à remettre sous enveloppe au parent pour activer son accès."
+        actions={
+        <FormAction
+          label="Générer un code"
+          icon={TicketIcon}
+          size="sm"
+          fields={[F.bool("force_nouveau", "Remplacer le code existant")]}
+          onSubmit={(b) => genererCodeEnveloppeParent(parentId, b.force_nouveau === true)}
+          successMessage="Code généré"
+          showResult
+          onDone={bump} />
+        }>
+        <div className="space-y-4">
+          <AsyncBlock load={() => getCodeEnveloppeParent(parentId)} deps={[parentId, tick]} isEmpty={(d) => !d}>
+            {(c) =>
+            <div className="space-y-3">
+                {str(c.code) &&
+              <div className="rounded-xl border border-dashed border-[var(--em-accent)] bg-[var(--em-accent-soft)] px-4 py-5 text-center">
+                    <p className="ecole_m-muted mb-1 text-[12px]">Code à remettre au parent</p>
+                    <p className="select-all font-mono text-[24px] font-semibold tracking-[0.25em] text-[var(--em-accent)]">{str(c.code)}</p>
+                  </div>
+              }
+                <ObjectView data={c} hide={["code"]} />
+              </div>
+            }
+          </AsyncBlock>
+
+          <AsyncBlock load={() => listerCodesEnveloppeParent(parentId)} deps={[parentId, tick]} empty={<></>}>
+            {(rows) =>
+            <div>
+                <p className="ecole_m-muted mb-2 text-[12px] font-medium">Historique des codes</p>
+                <div className="overflow-hidden rounded-lg border border-[var(--em-border)]">
+                  <MiniTable rows={rows} />
+                </div>
+              </div>
+            }
+          </AsyncBlock>
+        </div>
+      </Section>
+    </div>);
+}
+
+export function Parents() {
+  const [q, setQ] = useState("");
+  const dq = useDebounced(q);
+
+  return (
+    <div className="space-y-6">
+      <ModuleHero icon={UsersIcon} color={COLOR} title="Parents" subtitle="Comptes des familles et liens avec les élèves" />
+
+      <ResourceView
+        load={() => listerParents(dq || undefined)}
+        deps={[dq]}
+        columns={[
+        {
+          key: "nom",
+          label: "Parent",
+          render: (r) =>
+          <span className="flex items-center gap-3">
+                <span
+              className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-[12px] font-semibold"
+              style={{ background: `color-mix(in srgb, ${COLOR} 14%, transparent)`, color: COLOR }}>
+                  {initials(fullName(r))}
+                </span>
+                <span className="font-medium">{fullName(r)}</span>
+              </span>
+        },
+        { key: "telephone" },
+        { key: "email" },
+        { key: "actif" }]
+        }
+        toolbar={<SearchInput value={q} onChange={setQ} placeholder="Nom, téléphone ou e-mail" />}
+        actions={(reload) =>
+        <>
+            <FormAction label="Code d'activation libre" icon={MailPlusIcon} fields={codeActivationFields} onSubmit={genererCodeActivationParent} successMessage="Code généré" showResult />
+            <FormAction label="Nouveau parent" icon={UserPlusIcon} variant="primary" fields={parentCreateFields} onSubmit={creerCompteParent} successMessage="Compte créé" showResult onDone={reload} />
+          </>
+        }
+        emptyTitle="Aucun parent"
+        emptyIcon={UsersIcon}
+        detailTitle={fullName}
+        detailSubtitle={(r) => str(r.telephone)}
+        renderDetail={(r) => <ParentDetail parentId={str(r.id)} />} />
+    </div>);
+}
+
