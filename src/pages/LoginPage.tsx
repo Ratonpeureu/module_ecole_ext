@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams, Link } from 'react-router-dom';
+import { useNavigate, useSearchParams, Link, useLocation } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { ArrowRightIcon, Building2Icon, LoaderCircleIcon } from 'lucide-react';
 import { authLogin } from '@/lib/api';
@@ -7,8 +7,12 @@ import { useAuth } from '@/lib/auth';
 
 export default function LoginPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { setAuth } = useAuth();
   const [searchParams] = useSearchParams();
+
+  // Récupérer la page d'où l'utilisateur venait (si redirigé par RequireAuth)
+  const from = (location.state as any)?.from?.pathname || '/';
 
   useEffect(() => {
     const reason = searchParams.get('reason');
@@ -38,8 +42,11 @@ export default function LoginPage() {
           : null);
       if (tok && ent) setAuth(tok, ent);
       toast.success('Connecté');
-      const rawRedirect = searchParams.get('_redirect') || '/';
-      const redirect = rawRedirect.replace(/^\/ecole/, '') || '/';
+      
+      // Si on a un paramètre _redirect (ancien système) on le garde, sinon on utilise `from`
+      const rawRedirect = searchParams.get('_redirect');
+      const redirect = rawRedirect ? rawRedirect.replace(/^\/ecole/, '') : from;
+      
       navigate(redirect, { replace: true });
     } catch (err: any) {
       toast.error(err?.message || 'Échec de la connexion');
