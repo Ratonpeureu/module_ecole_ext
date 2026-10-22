@@ -497,7 +497,6 @@ export const retirerOverrideEcheance = (echeanceId: string): Promise<OverrideEch
 
 
 // ── SEED DÉMO (entreprise spécifique uniquement) ─────────────────────────
-export const SEED_DEMO_AUTHORIZED_ENTREPRISE = "441329ab-5d19-43d5-8e08-e4bd7f715f15";
 
 export interface SeedDemoLance {
   task_id: string;

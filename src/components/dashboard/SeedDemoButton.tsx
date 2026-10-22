@@ -4,7 +4,6 @@ import { Rocket, Loader2, X } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { useSchool } from "../../contexts/SchoolContext";
 import {
-  SEED_DEMO_AUTHORIZED_ENTREPRISE,
   lancerSeedDemo,
   getSeedDemoStatut,
 } from "../../lib/api_ecole";
@@ -27,11 +26,6 @@ export function SeedDemoButton() {
       if (pollRef.current) window.clearTimeout(pollRef.current);
     };
   }, []);
-
-  // ── N'affiche rien si l'entreprise n'est pas autorisée
-  if (!entreprise || entreprise.id !== SEED_DEMO_AUTHORIZED_ENTREPRISE) {
-    return null;
-  }
 
   const stopPolling = () => {
     if (pollRef.current) {
